@@ -1,0 +1,609 @@
+---
+title: "QCB 408/508 -- Homework 2"
+author: "Shannon Keenan"
+header-includes:
+  - \newcommand{\boxedtext}[1]{ \noindent \makebox[\textwidth][c]{ \fbox{ \begin{minipage}[t]{0.96\linewidth}#1\end{minipage} } } }
+  - \hypersetup{pdfborder={0 0 1}}
+  - \newcommand{\E}{\operatorname{E}}
+  - \newcommand{\V}{\operatorname{Var}}
+  - \usepackage{bm}
+output: 
+  pdf_document
+---
+
+----
+
+# Instructions
+
+Homework 2 is due by **11:59pm on** ~~**April 16**~~ **April 23**. See the syllabus for further details on homeworks. Please submit both a `.Rmd` and `.pdf` file on Blackboard. We will not accept additional files. Make sure you have your file structure arranged such that we can compile your `.Rmd` in a folder with the provided data files files. Be sure to follow the collaboration policy outlined in the syllabus.
+
+**You are not allowed to use the function `setwd()` or have any directory paths in your code. If either is used, we will count the homework as unable to compile and you will lose a significant amount of points.** Unzip the homework directory and double-click the `hw2.Rmd` file. This will start RStudio and set the working directory to the homework directory, regardless of where it is on your computer.
+
+We will ask questions using bolded headings and provide further details for these questions using the boxed-quote formatting. You will be expected to answer with R code and normal text.
+
+Be sure to follow the collaboration policy outlined in the syllabus. **For this homework, you may follow the course collaboration policy as detailed in the syllabus for Problem 6 only.**
+
+For all parts of this assignment, you MUST use R commands to print the output as part of your R Markdown file. You are not permitted to find the answer in the R interactive session and then copy-paste the answer into this document. Further, you are required to use LaTeX to answer questions involving math equations in the R Markdown file, when applicable.
+
+Lastly, we advise that you compile your R Markdown file early and often, so you can catch problems before they get too tangled up with your work. Don't forget to look at the compiled PDF as well! R will not warn you when you create and submit a 5,000 page PDF because of unexpected output.
+
+**For Homework 2, students enrolled in QCB 408 will answer all questions except Problem 1**.
+
+The total number of points per problem is as follows:
+
+ Problem | 1 | 2 | 3 | 4 | 5 | 6 | 7 | Total
+---------|---|---|---|---|---|---|---|------
+ QCB 408 | -- | 12 | 18 | 12 | 18 | 34 | 6 | 100
+ QCB 508 | 15 | 10 | 15 | 10 | 15 | 30 | 5 | 100
+
+----
+
+For undergraduates: Please type your name below the honor pledge to serve as a digital signature.
+
+> I pledge my honor that I have not violated the honor code when completing this assignment.
+
+Digitally signed:
+
+\clearpage
+
+# (1) Point estimation. [\textcolor{red}{QCB 508 students only}]
+
+Suppose that $X_1, \ldots, X_n \sim \mathrm{Uniform}(0, \theta)$, where $\theta$ is unknown, $\theta>0$, and the $X_i$ are i.i.d. 
+
+### (a) What is the p.d.f. of $X_i$? What is the joint p.d.f of $X_1, \cdots, X_n$?
+
+The p.d.f of $X_i$ is $f(x_i,\theta) = \frac{1}{\theta}$ in the range $[0,\theta]$ and 0 everywhere else. 
+Since these random variables are independent, you can multiply their p.d.f.s to get the joint p.d.f.:
+$f(x_1,x_2,...,x_n;\theta) = f(x_1;\theta)f(x_2;\theta)...f(x_n;\theta) = \frac{1}{\theta^n}$ (in the range $[0,\theta]$ and 0 everywhere else). 
+
+### (b) What is value of $\theta$ that maximizes the p.d.f. given the data that we've observed. Let's call this $\hat{\theta}_{\mathrm{MLE}}$, for maximum likelihood estimate.
+
+We need to find a maximum of the likelihood function. However, we can't just differentiate and set to zero because the function does not exist $\theta=0$.
+
+$$
+L(\theta;\boldsymbol{x}) = f(\boldsymbol{x};\theta)\\
+L(\theta;\boldsymbol{x})= \begin{cases} 
+      \frac{1}{\theta^n} & 0\leq \boldsymbol{x}\leq \theta \\
+      0 & \text{otherwise}
+   \end{cases}
+$$
+We know that the pdf is 0 outside of a certain range.  That means that $\theta$ must be greater than or equal to $x_i$.  We are already told it is positive.  Any $\theta$ greater than $x_i$ makes the marginal pdf 0, meaning the joint pdf is also 0.  This means that $\theta$ must be the maximum of $x_1,x_2,...,x_n$.  
+
+$$
+\hat{\theta}_{\mathrm{MLE}} = \max(X_1,...,X_n)
+$$
+
+### (c) What is the p.d.f. of $\hat{\theta}_{\mathrm{MLE}}$?
+
+The probability that $\hat{\theta}_{\mathrm{MLE}}$ is a certain value (let's call it $m$) is the probability that one of the $x_i$s is $m$ and that the other $x_i$s are less than or equal to $m$.  Since there are $n$ random variables, there are $n$ possible ways for one rv to be $\max{X_i}$ and the other rv to be less than or equal to $m$. 
+
+$$
+\begin{align*}
+f(m) &= n*(Pr(x_1=m)Pr(x_2\leq m)...Pr(x_n \leq m))\\
+&= n \left( \frac{1}{\theta}\right)\left ( \frac{m}{\theta} \right )^{(n-1)}
+\end{align*}
+
+$$
+### (d) Show that $\hat{\theta}_{\mathrm{MLE}}$ is biased, i.e., compute $\E [\hat{\theta}_{\mathrm{MLE}}]$ and show this value is not $\theta$.
+
+$$
+\begin{align*}
+\text{E}[\hat{\theta}_{\mathrm{MLE}}] &= \int_0^\theta mf(m)dm \\
+&=\frac{n}{\theta^n}\int_0^\theta m^n dm\\
+&=\frac{n}{\theta^n}\left[ \frac{1}{n+1}m^{n+1}\Big|_0^\theta\right]\\
+\\
+&=\frac{n}{n+1}\theta
+\end{align*}
+
+$$
+
+### (e) Show, via factorization of the p.d.f., that $\hat{\theta}_{\mathrm{MLE}}$ is a sufficient statistic of $\mathrm{Uniform}(0, \theta)$, then modify $\hat{\theta}_{\mathrm{MLE}}$ so that it is unbiased.
+
+
+$\hat{\theta}_{\mathrm{MLE}}$ is a sufficient statistic of Uniform(0,$\theta$) if $\boldsymbol{x}|\hat{\theta}_{\mathrm{MLE}}$ does not depend on $\theta$. 
+
+We need to write the pdf in terms of the maximum likelihood estimate.
+
+$$
+f(\boldsymbol{x};\theta) = g(T(\boldsymbol{x}),\theta)h(\boldsymbol{x})\\
+
+f(\boldsymbol{x};\theta)= \begin{cases} 
+      \frac{1}{\theta^n} & 0\leq \boldsymbol{x}\leq \theta \\
+      0 & \text{otherwise}
+   \end{cases}\\
+   \\
+\\
+\text{create a new function that include the MLE}\\
+f(\boldsymbol{x};\theta)= \begin{cases} 
+      0 & \text{max}(x_i) > \theta\\ 
+      \frac{1}{\theta^n} & 0\leq \text{max}(x_i)\leq \theta \\
+      0 & \text{max}(x_i)<0
+   \end{cases}\\
+   \text{    }\\
+   f(\boldsymbol{x};\theta)=\frac{1}{\theta^n} \begin{cases} 
+      0 & \text{max}(x_i) > \theta\\ 
+      1 & 0\leq \text{max}(x_i)\leq \theta \\
+      0 & \text{max}(x_i)<0
+   \end{cases}\\
+$$
+Because the right side depends on $\boldsymbol{x}$ only through the value of $\text{max}(x_1, ..., x_n)$, the MLE is a sufficient statistic for $\theta$. 
+
+The modified MLE to make it unbiased is:
+$$
+\frac{n+1}{n} \hat{\theta}_{\mathrm{MLE}}
+$$
+
+\boxedtext{In addition to being sufficient, another property of $\hat{\theta}_{\mathrm{MLE}}$ is that it is a complete statistic of the distribution $\mathrm{Uniform}(0, \theta)$. A consequence of these two properties is that any function of $\hat{\theta}_{\mathrm{MLE}}$ that is unbiased is a uniformly minimum variance unbiased estimator (UMVUE) of $\theta$.}
+
+### (f) Use the sample mean $\bar{X}$ to find another unbiased estimator (let's call this $\hat{\theta}_{\bar{X}}$).
+
+Sample mean is:
+
+$$
+
+\bar{X}= \frac{1}{n}\sum_iX_i\\
+\text{E}[\bar{X}] = \frac{1}{n}\sum_i\text{E}[X_i]\\
+= \frac{1}{n}\sum_i\frac{\theta}{2} = \frac{\theta}{2}\\
+
+\text{So then an unbiased estimator would be:}\\
+
+\hat{\theta}_{\bar{X}} = 2\bar{X}
+
+$$
+
+
+### (g) Show, using simulation in R, that $\hat{\theta}_{\bar{X}}$ has a higher variance than the UMVUE you found in part e. Do this by computing sample variances of these two estimators as well as plotting histograms of the sampling distributions of these two estimators.
+
+```{r Problem 1g}
+library(reshape2)
+library(ggplot2)
+
+n=25
+theta = 5
+reps=10000
+
+#UMVUE
+theta_hat <- replicate(reps,(n+1)/n*max(runif(n, min=0, max=theta)))
+
+paste0('The variance of the first estimator is ', var(theta_hat))
+
+#sample mean 
+theta_bar <- replicate(reps, sum(runif(n,min=0,max=theta))*2/n)
+
+paste0('The variance of the second estimator is ', var(theta_bar))
+
+df <- data.frame('hat'=theta_hat, 'bar'=theta_bar)
+
+ggplot(melt(df), aes(value, fill=variable)) + geom_histogram(alpha=0.5)
+
+```
+
+\boxedtext{For the simulation, pretend the true (but unknown) population parameter is $\theta=5$. Simulate with sample size of 25 and at least 10,000 replicates. Unlike HW1 you can use a for loop here if you prefer.}
+
+### (h) Find the scaled version of $\hat{\theta}_{\mathrm{MLE}}$ (i.e., find $\hat{\theta}_{\mathrm{MSE}}=\gamma\hat{\theta}_{\mathrm{MLE}}$) that has the minimum expected mean squared error.
+
+\boxedtext{Note that the resulting estimator will be biased! While being the UMVUE is a nice property, sometimes it can be advantageous to be biased. We will explore this concept further in future weeks.}
+
+### (i) Incorporate the estimator from part h to the simulations in part g. Further, compute the mean squared error of each estimator. How does it compare?
+
+\clearpage
+
+# (2) P-values.
+
+### (a) Suppose that data are observed under the model $X_1, X_2, \ldots, X_n \stackrel{{\rm iid}}{\sim} F_\theta$.  Consider testing the hypothesis $H_0: \theta=\theta_0$ vs $H_1: \theta\not=\theta_0$ using test statistic $S(\boldsymbol{x})$ with significance regions of the form $\Gamma_{\alpha} = \{\bm{x}: S(\bm{x}) \geq c_{1-\alpha}\}$, where $c_{1-\alpha}$ is define so that $\Pr(\Gamma_{\alpha} ; \theta = \theta_0) = \alpha$. Derive the sampling distribution of the P-value for this test when the null hypothesis is true.
+
+The p-value is a random variable. The p-value is computed by calculating the probability of seeing a test statistic more extreme than the observed statistic under the null hypothesis.  
+
+The test statistic, $S(\boldsymbol{x})$, is just a transformation of an estimate of $\boldsymbol{X}$.  So the test statistic is also a random variable, which we can say has a cdf $F_S(s) = Pr(S\leq s)$
+
+Let the p-value be represented by the random variable $Z$.  To find the cdf, we need to find $F_Z(z) = Pr(Z \leq z)$
+
+By definiton, $Z = Pr(S \leq s)$ under the null hypothesis. 
+
+$$
+
+Z = Pr(S \geq s) = 1-Pr(S < s) = 1 - F_S(s) = F_S(s)\\
+\text{so...}\\
+F_Z(z) = Pr(Z \leq z) = Pr(F_S(s) \leq z) = Pr(S \leq F_S^{-1}(z)) = F_S(F_S^{-1}(z)) = \\
+\text{so...}\\
+F_Z(z) = z 
+$$
+This cumulative distribution function is typical of a uniform distribution.  So p-values are uniformly distributed! 
+
+### (b) Show that calling a test significant whenever p-value $\leq \alpha$ corresponds to a Type I error rate (aka false positive rate) of $\alpha$.
+ 
+Since p-values are uniformly distributed under the null hypothesis, each p-value is equally likely to be called.  You have chosen that p-values smaller than alpha will reject the null.  So if the null hypothesis is true, then based on the cdf of a uniform distribution, $F_Z(\alpha) = Pr(Z\leq \alpha) = \alpha$. Meaning, the probability you reject the null even if the null is true is $\alpha$! 
+
+\clearpage
+
+# (3) Power and sample size.
+
+You have discovered a new chemical, 2,4-Dinitrophenol, which appears to diminish the mitochondrial proton motive force necessary for ATP synthetase to operate. Being a crafty researcher, you think that this energy wasting through futile cycling could make this chemical an effective weight loss drug by increasing an individual's metabolic rate. 
+
+The measure of metabolic rate (power) that you've chosen to use is the rate of $\mathrm{O}_2$ consumption of individuals over a 24 hour period. Previous investigation of a control population has indicated that metabolic rate is normally distributed with a mean of 11.7 megajoules per day and a standard deviation of 2.
+
+To determine if this drug results in a meaningful increase in metabolic rate (defined here to be an increase of at least 10%), you want to determine the sample size necessary to have a false positive rate (FPR, i.e., Type I error rate) of 5% and a power of 90%.
+
+### (a) Plot the expected value of Wald test statistics versus sample sizes (from 1 to 100). Indicate on the plot (and report the value) where the test statistic cutoff would be to satisfy your desired power and FPR. What is the minimum sample size that exceeds this threshold (call this $N_\mathrm{min}$)? Disregard boundary issues caused by metabolic rate having to be non-negative.
+
+```{R Problem 2a}
+
+#an alpha of 0.05 corresponds to w equalling 1.645 (one-sided)
+#the minimum n 
+S = qnorm(0.05, 0, 1, lower.tail=FALSE)
+
+n = seq(1,100,1)
+w = sqrt(n)*(1.17)/2
+
+plot(n,w)+abline(h=S, v =which(w>=S)[1])
+
+#say the real mean is 14.  whats the power? 
+new_z <- sqrt(n)*((S*sqrt(n)/2+11.7)-12.87)/2
+power = 1-pnorm(new_z,0,1,lower.tail=FALSE)
+plot(n, power)+abline(h=.90, v=which(power>=0.9)[1])
+
+```
+So tentatively, I'm going to say $N_{min} = 8$. 
+
+### (b) Use simulation to determine if the minimum sample size $N_\mathrm{min}$ yields the desired power given that the alternative hypothesis is true. Simulate 1000 studies of size $N_\mathrm{min}$ from a normal parameterized by the mean of the minimum desired increase in metabolic rate and the control group's variance. Calculate a Wald statistic for each study and determine the fraction of the simulated studies where the Wald statistic exceeds the previously calculated threshold.
+
+```{r problem 3b}
+
+nmin=8
+reps=1000
+x <- replicate(reps,rnorm(nmin,12.87,2))
+
+#calculate the wald statistic
+wald <- sqrt(nmin)*(colMeans(x)-12.87)/2
+
+exceeds <- length(which(abs(wald)>S))/reps
+
+power = 1-exceeds
+```
+
+### (c) Use simulation to determine if the minimum sample size $N_\mathrm{min}$ yields the desired FPR given that the null hypothesis is true. Simulate 1000 studies of size $N_\mathrm{min}$ from a normal parameterized by the mean and variance of the control group. Calculate a Wald statistic for each study and determine the fraction of the simulated studies where the Wald statistic exceeds the previously calculated threshold.
+
+```{r Problem 3c}
+
+nmin=8
+reps=1000
+x <- replicate(reps,rnorm(nmin,11.7,2))
+
+#calculate the wald statistic
+wald <- sqrt(nmin)*(colMeans(x)-11.7)/2
+
+FPR <- length(which(wald>=1.645))/reps
+
+```
+
+
+\clearpage
+
+# (4) Conjugate priors.
+
+### (a) Show that the Gamma distribution is the conjugate prior for the Poisson distribution.
+
+$$
+
+f(\theta|X)=\frac{f(X|\theta)f(\theta)}{f(X)} \propto f(X|\theta)f(\theta) \text{ (since }f(X)\text{ doesn't depend on } \theta)\\
+
+\text{prior ~ Gamma}(\alpha,\beta) \rightarrow f(\theta) = \frac{\beta^\alpha\theta^{\alpha-1}e^{-\beta\theta}}{\Gamma(\alpha)}\\
+\text{Likelihood ~ Poisson}(\theta) \rightarrow f(X|\theta) = \frac{\theta^xe^{-\theta}}{x!}\\
+f(\theta|X) \propto f(X|\theta)f(\theta) = \frac{\beta^\alpha\theta^{\alpha-1}e^{-\beta\theta}\theta^xe^{-\theta}}{\Gamma(\alpha)x!}=\frac{\beta^\alpha\theta^{\alpha+x-1}e^{-\theta(1+\beta)}}{\Gamma(\alpha)x!}\\
+f(\theta|X) \propto \text{Gamma}(x+\alpha, 1+\beta)
+\\
+\text{If X is a vector of N random variables, then this generalizes to:}\\
+f(\theta|X) \propto \text{Gamma}(N\sum_i{x_i}+\alpha, N+\beta)
+
+$$
+
+
+### (b) Show that the Dirichlet distribution is the conjugate prior for the Multinomial distribution. We did not cover these distributions in the lectures, but they are described at http://jdstorey.org/fas/multivariate-rvs.html.
+
+
+$$
+
+f(\Theta|X)=\frac{f(X|\Theta)f(\Theta)}{f(X)} \propto f(X|\Theta)f(\Theta) \text{ (since }f(X)\text{ doesn't depend on } \theta)\\
+\text{prior~Dirichlet}(\Theta;\alpha_i) \rightarrow f(\Theta)=\frac{\Gamma(\sum\limits_{i=1}^m\alpha_i)}{\prod\limits_{i=1}^m\Gamma(\alpha_i)}\prod\limits_{i=1}^m \theta^{\alpha_1-1} \propto \prod\limits_{i=1}^m \theta^{\alpha_1-1} \\
+
+\text{Likelihood ~ Multinomial}(X|\Theta) = {n \choose x_1,x_2,...x_m}\prod\limits_{i=1}^m\theta_i^{x_i} \propto \prod\limits_{i=1}^m\theta_i^{x_i}
+
+f(\Theta|X) \propto f(X|\Theta)f(\Theta) \propto \prod\limits_{i=1}^m\theta_i^{x_i}\prod\limits_{i=1}^m \theta^{\alpha_1-1} \\
+=\prod\limits_{i=1}^m\theta_i^{x_i+\alpha_i-1}\\
+\text{which is just Dirichlet}(\theta,\alpha_i')\\
+\text{where } \alpha_i' = x_i+\alpha_i
+
+$$
+
+\clearpage
+
+# (5) Principal components analysis of the HGDP dataset. 
+
+\boxedtext{DNA consists of a chain of four nucleotide bases, namely, A, G, C, and T. While most our DNA consists of the same sequence of nucleotides, there are specific nucleotides, called single nucleotide polymorphisms (SNPs), that vary in at least 1\% of the population. Studying this variation has important consequences in understanding human ancestry, disease, medical treatment, and drug development. In this problem, we will look at data from the Human Genome Diversity Project (HGDP). The HGDP genotyped 1,043 individuals from Africa, Europe, the Middle East, South and Central Asia, East Asia, Oceania, and the Americas. The primary objective of the study was to understand the genetic diversity in the population. Here we will work with a small subset of the data: 940 individuals and 10,000 SNPs.}
+
+### Read in the SNP data `hgdp_subset.txt` and sample information `hgdp_samples.txt`.
+
+```{load in data}
+
+SNPs <- read.csv(paste0(getwd(),'/hgdp_subset.txt'),sep='\t', check.names=FALSE)
+samp <- read.csv(paste0(getwd(),'/hgdp_samples.txt'),sep='\t', header=TRUE)
+
+```
+
+\boxedtext{The SNPs are coded as 0, 1, or 2. These values represent the number of minor alleles. For example, suppose the minor allele is C. We can either observe GG (0), GC (1), or CC (2) in the population.}
+
+### (a) How many observations are missing? For each SNP, mean center the observations. For each SNP, impute the missing values with a single number, and explain why you chose this number. 
+
+```{r}
+
+#how many observations are missing?
+paste0(sum(is.na(SNPs)),' observations are missing')
+
+#mean center the data 
+SNPs_c <- SNPs-rowMeans(SNPs,na.rm=TRUE)
+SNPs_c[is.na(SNPs_c)]<-0
+
+#I just made the missing value the mean value of the SNP. and then since i subtract the average, the value becomes 0. 
+
+```
+
+### (b) Apply the `pca` function from https://jdstorey.org/fas/principal-component-analysis.html#a-simple-pca-function to the above matrix and make a scree plot. Approximately how many principal components explain most of the variation?
+
+```{r}
+
+library(tidyverse)
+library(broom)
+
+pca <- function(x, space=c("rows", "columns"), 
+                center=TRUE, scale=FALSE) {
+  space <- match.arg(space)
+  if(space=="columns") {x <- t(x)}
+   x <- t(scale(t(x), center=center, scale=scale))
+   x <- x/sqrt(nrow(x)-1)
+   s <- svd(x)
+   loading <- s$u
+   colnames(loading) <- paste0("Loading", 1:ncol(loading))
+   rownames(loading) <- rownames(x)
+   pc <- diag(s$d) %*% t(s$v)
+   rownames(pc) <- paste0("PC", 1:nrow(pc))
+   colnames(pc) <- colnames(x)
+   pve <- s$d^2 / sum(s$d^2)
+   if(space=="columns") {pc <- t(pc); loading <- t(loading)}
+   return(list(pc=pc, loading=loading, pve=pve))
+}
+
+prcomp<-pca(x=SNPs_c, space='rows',center=TRUE,scale=FALSE)
+
+#How many componenets explain most of the variantion 
+prv <- cumsum(prcomp$pve)*100
+plot(seq(1,length(prv),1),prv, xlab='Principal Component', ylab='Percent of Variation Explained',main='Scree Plot',pch=20)+abline(h=50,col='blue')+abline(h=90,col='red')+abline(v=222,col='blue')+abline(v=692,col='red')
+
+paste0('50% of the variation is explained by ', length(which(prv<=50)),' components')
+paste0('90% of the variation is explained by ', length(which(prv<=90)),' components')
+
+```
+
+### (c) What proportion of the total variance do the first three principal components explain?
+
+```{r}
+paste0('The first 3 principal components explain ', round(prv[3],1),'% of the total variance')
+
+```
+
+
+### (d) Make a boxplots of PC1 and PC10 stratified by geographic location. Make sure to label each principal component a different color. Note your observations.
+
+```{r}
+library(dplyr)
+library(reshape2)
+
+pc<- data.frame('PC1'=prcomp$pc[1,],'PC10'=prcomp$pc[10,])
+m <- match(rownames(pc),as.character(samp$individual))
+pc<-cbind(pc,'Location'=samp$location[m])
+
+m.pc<-melt(pc, id.vars='Location', measure.vars=c('PC1','PC10'))
+
+ggplot(m.pc, aes(Location,value,col=variable))+geom_boxplot()
+
+```
+From this plot, you can see that the first principal componenet explains the variation in the data that is from difference in geographic location.  The 10th principal component explains variation that must come from somewhere else. 
+
+### (e) Create a biplot of the first two principal components and label the points based on geographic location. Note your observations.
+
+```{r}
+
+pc<- data.frame('PC1'=prcomp$pc[1,],'PC2'=prcomp$pc[2,])
+m <- match(rownames(pc),as.character(samp$individual))
+pc<-cbind(pc,'Location'=samp$location[m])
+
+ggplot(pc, aes(PC1,PC2,col=Location))+geom_point()
+
+```
+As already noted, the first principal component clusters points by location.  The second principal component really separates Africa from the rest of the locations.  
+
+### (f) We included the SNP IDs in the file `hgdp_names.txt`. Load the data and identify the top 10 SNPs that contribute the most to the first principal component. Next identify the top 10 SNPs that contribute the least.
+
+```{r}
+
+#I think only the magnitude of the loading is important, not the sign. 
+
+snp_id <- read.csv(paste0(getwd(),'/hgdp_names.txt'),sep='\t',check.names=FALSE, header=TRUE)
+w<- order(abs(prcomp$loading[,1]), decreasing=TRUE)
+
+paste0('The top 10 SNPs that contribute the most are ', paste(snp_id[w[1:10],1],collapse=', '))
+
+w<- order(abs(prcomp$loading[,1]), decreasing=FALSE)
+
+paste0('The top 10 SNPs that contribute the least are are ', paste(snp_id[w[1:10],1],collapse=', '))
+```
+
+### (g) Permute each SNP in the genotype matrix, for example, using the `sample()` function. Repeat steps (a-e) on this permuted matrix. Why does this biplot look different than the one in (e)?
+
+```{r}
+
+set.seed(8)
+
+#permute the rows
+permuted_SNPs = SNPs[sample(dim(SNPs)[1]),]
+
+#mean Center the data and set unknowns to 0
+pSNPs_c <- permuted_SNPs-rowMeans(permuted_SNPs,na.rm=TRUE)
+pSNPs_c[is.na(pSNPs_c)]<-0
+
+#apply PCA and create a scree plot
+
+prcomp<-pca(x=pSNPs_c, space='rows',center=TRUE,scale=FALSE)
+
+#How many componenets explain most of the variantion 
+prv <- cumsum(prcomp$pve)*100
+plot(seq(1,length(prv),1),prv, xlab='Principal Component', ylab='Percent of Variation Explained',main='Scree Plot',pch=20)+abline(h=50,col='blue')+abline(h=90,col='red')+abline(v=222,col='blue')+abline(v=692,col='red')
+
+paste0('50% of the variation is explained by ', length(which(prv<=50)),' components')
+paste0('90% of the variation is explained by ', length(which(prv<=90)),' components')
+
+#create box plots for PC1 and PC2
+
+pc<- data.frame('PC1'=prcomp$pc[1,],'PC10'=prcomp$pc[10,])
+m <- match(rownames(pc),as.character(samp$individual))
+pc<-cbind(pc,'Location'=samp$location[m])
+
+m.pc<-melt(pc, id.vars='Location', measure.vars=c('PC1','PC10'))
+
+ggplot(m.pc, aes(Location,value,col=variable))+geom_boxplot()
+
+
+#Plot PC1 vs PC2
+
+pc<- data.frame('PC1'=prcomp$pc[1,],'PC2'=prcomp$pc[2,])
+m <- match(rownames(pc),as.character(samp$individual))
+pc<-cbind(pc,'Location'=samp$location[m])
+
+ggplot(pc, aes(PC1,PC2,col=Location))+geom_point()
+```
+Since the order of the SNPs was a little differnent, the order of the loadings is also different. And so the direction of PC1 and PC2 are also a little different.  While the groupings of the graph and in different positions, the same information is still conveyed: the first PC explains variation due to location and the second PC is variation is other factors, including AFrica vs other locations.  
+
+\clearpage
+
+# (6) EM algorithm for haplotype reconstruction.\newline [\textcolor{red}{Collaboration allowed as detailed in the syllabus}]
+
+A common form of genetic variation is the single nucleotide polymorphism (SNP) genotype. On a single chromosome, SNPs can be represented as a Bernoulli random variable taking the values 0 or 1. This is because at any particular location on the chromosome, you either have A/T or a C/G as your DNA. However, humans are diploid, meaning there are two of each chromosome. Thus, observed SNPs genotypes for humans take the values of 0, 1, and 2, where you add the binary values for each copy of the chromosome.
+
+A haplotype is a haploid (single chromosome) genotype. In other words, once we observe some 0, 1, and 2 valued SNPs, we want to infer what the binary values on each chromosome are most likely to be, ignoring the order of the haplotypes. This is really easy in the single locus case. If you observe a SNP to be 0, that means both haplotypes are 0. If you observe a SNP to be 1, that means you have one 0 haplotype and one 1 haplotype. And if you observe a SNP to be 2, that means both haplotypes are 1.
+
+However, this is trickier in the 2-locus case. There are $2^2=4$ possible haplotypes and $3^2=9$ possible observed genotypes. We can break down a few of the possible 2-locus genotypes:
+
+1. Observed genotypes are $(0,0)$. Both haplotypes are $(0,0)$.
+2. Observed genotypes are $(0,1)$. One haplotype each of $(0,0)$ and $(0,1)$.
+3. Observed genotypes are $(2,1)$. One haplotype each of $(1,1)$ and $(1,0)$.
+4. Observed genotypes are $(0,2)$. Both haplotypes are $(0,1)$.
+
+In fact, all but one of the possible 2-locus genotypes correspond directly to a single combination of haplotypes. The ambiguous case is an observed genotype of $(1,1)$. This could correspond to haplotypes of $(1,1)$ and $(0,0)$, or haplotypes of $(1,0)$ and $(0,1)$. We don't have a way to resolve this, but, information from the other genotypes tells us about the relative frequencies of these possible haplotypes, so we can infer the proportion of $(1,1)$ genotypes that can be broken down into each of these possible haplotype pairs. In fact, the general problem is to infer the frequency of each of the possible haplotypes in the data.
+
+Now, we will use an EM algorithm to infer the haplotype frequencies in the 3-locus case. For the 3-locus case, there are $2^3=8$ possible haplotypes and $3^3=27$ possible genotypes.
+
+We are interested in inferring which haplotype combinations are underlying the observed genotypes. Suppose we observe the genotypes for $N$ individuals as the matrix $\boldsymbol{X}$, with dimensions $N \times 3$, and each individual's genotype is the row vector $X_i$, $i=1, \ldots, N$. For sample $i$, there is a parameter representing the unordered haplotype pairs $z_i=(g_i, h_i)$, where $g_i$ and $h_i$ are the haplotypes we currently think make up genotype $x_i$. These $z_i$ can be aggregated into a matrix $\boldsymbol{Z}$. Now, suppose that there is also a parameter $\boldsymbol{P}$, which is a vector of length 8, that represents the population haplotype frequencies for the 8 possible haplotypes (the haplotypes are numbered arbitrarily here). The components of $\boldsymbol{P}$ sum to 1. We are interested in inferring $\boldsymbol{P}$, and the $z_i$ are "hidden variables" that aid in this.
+
+Suppose that the population fraction of haplotype pairs that are $(g_i, h_i)$ is $p_{g_i} p_{h_i}$ and that all $z_i$ are independent of one another. In population genetics terms, this is equivalent to saying that Hardy-Weinberg equilibrium (HWE) holds. This also means that we can model $\boldsymbol{Z}$ across the population in terms of a length 8 counting vector $\boldsymbol{m}(\boldsymbol{Z})=(m_{0,0,0},\ldots,m_{1,1,1})$, corresponding to the haplotype counts for the 8 haplotypes given some particular configuration of $\boldsymbol{Z}$.
+
+To make our lives easier, let's summarize the model in terms of the counting vectors:
+
+- $\boldsymbol{m}$ is defined above. 
+- $\boldsymbol{n}=(n_{0,0,0},\ldots,n_{2,2,2})$, corresponding to the counts of the 27 different genotype configurations in the data. This replaces $\boldsymbol{X}$.
+
+Further, let the superscript $(t)$ denote the $t$-th iteration of the EM algorithm. You may feel free to number of the haplotypes from 1 to 8 for convenience.
+
+### Part (a)
+
+How many unordered haplotype pairs are there for the 3-locus problem? Convert the data in `haplotype.txt` from $\boldsymbol{X}$ to the genotype counts $\boldsymbol{n}$.
+
+There are 36 unordered haplotype pairs in the 2 locus problem.  Any genotype that has 2 locus with a "1" have two unique haplotype combinations.  The genotype (1,1,1) has 4 unique haplotype combinations. 
+
+```{r }
+
+haps <- read.csv(paste0(getwd(),'/haplotype.txt'),sep='\t')
+
+# we need to conveert this to a 1x27 vector of counts, n. 
+#I will multiply by prime numbers and sum to get one score for each individual - to indicate the 27 unique genotypes.  
+
+sn <- 5*haps[,1]+7*haps[,2]+13*haps[,3]
+n <- as.data.frame(table(sn))$Freq
+
+```
+
+### Part (b)
+
+In order to apply the EM algorithm, we need the log-likelihood of $\boldsymbol{P}$ in terms of $\boldsymbol{m}$, i.e., write $\ell(\boldsymbol{P} ; \boldsymbol{m})$.
+The data $\boldsymbol{n}$ doesn't appear! This is because in the E-step, we take a conditional expectation with respect to $\boldsymbol{Z}|\boldsymbol{n}$, and if you know all the haplotype assignments you also know all the genotypes.
+
+We can describe the probability of seeing the vector $\boldsymbol{m}$ with probabilities $\boldsymbol{P}$ with the multinomial distribution:
+
+$$
+
+f(\boldsymbol{m};\boldsymbol{p}) = \frac{2000!}{m_1!...m_8!}p_1^{m_1}...p_8^{m_8}\\
+\text{ where} \sum\limits_{i=1}^8m_i = 2000\\
+\text{so then log-likelihood is...}\\
+\ell(\boldsymbol{P};\boldsymbol{m})=log(2000!)-\sum\limits_{i=1}^8log(m_i!)+\sum\limits_{i=1}^8m_ilog(p_i)
+
+
+$$
+
+
+
+###  Part (c)
+
+Now we want to derive the E-step. For this particular problem, you only need $Q(\boldsymbol{P} | \boldsymbol{P}^{(t)}) = \E[\ell(\boldsymbol{P}; \boldsymbol{m}) | \boldsymbol{n}, \boldsymbol{P}^{(t)}]$.
+
+First, compute the following expression for each value of $h$: $m_h^* = \E[m_h|\boldsymbol{n}, \boldsymbol{P}^{(t)}]$, where $h$ corresponds to a haplotype.  Since there are 8 of these, each with 8 terms, if you don't want to type out the math, you may instead write an R function (or multiple functions, whichever you find more intuitive) that uses $\boldsymbol{n}$ and $\boldsymbol{P}^{(t)}$, and returns $m_h^*$.
+
+Then, write $Q(\boldsymbol{P} | \boldsymbol{P}^{(t)})$ in terms of $m_h^*$. Again, you can choose to implement this in R instead of writing out the math.
+
+### Part (d)
+
+Now derive the M-step. Find the values of $\boldsymbol{P}$ (i.e., $\boldsymbol{P}^{(t)}$) that maximizes $Q(\boldsymbol{P} | \boldsymbol{P}^{(t)})$. 
+
+### Part (e)
+
+Implement the EM algorithm, and infer the 3-locus haplotype frequencies $\boldsymbol{P}$ for the genotypes in the file `haplotype.txt`. Choose any starting conditions. Terminate your algorithm once you are sure $\boldsymbol{P}$ has converged, i.e., when the values of $\boldsymbol{P}$ change less than some threshold. Report the values for $\boldsymbol{P}$ as well as the number of iterations.
+
+
+\clearpage
+
+# (7) Method of moments applied to RNA-seq data.
+
+When analyzing a dataset where the measurements are counts, one objective is to determine whether or not the counts can be modeled as Poisson random variables or if they require an over-dispersed model (such as those covered in lecture). Here, we consider an RNA-seq dataset in `rna_seq.txt` where the rows are genes and the columns are observations. If you recall, the data are counts corresponding to the number of times a sequenced read was mapped to a given gene. 
+
+We can try to assess this by comparing the method of moments estimate of the variance to the Poisson MLE estimate of the variance on a gene-by-gene basis. In this case, the methods of moments estimate of the variance can be computed by plugging in the sample moments of the data into the variance formula $\V[X]=\E[X^2]-\E[X]^2$. Make a scatter plot comparing these two variance estimates for each gene. What does this tell us about using the Poisson to model this data? Hint: You may want to apply a transformation in making this plot to help view the relationship between the two estimates.
+
+```{r}
+
+rna_data <- read.csv(paste0(getwd(),'/rna_seq.txt'),sep='\t',header=FALSE)
+
+#Calculate variance using methods of moment 
+
+E_X = rowSums(rna_data)/8
+E_X2 = rowSums(rna_data^2)/8
+V_X = E_X2-E_X^2
+
+
+#Estimate the variances using Poisson MLE. This is just the mean (lambda hat) 
+
+lambda_hat <- rowSums(rna_data)/8
+
+#plot together 
+res <- data.frame('gene'=seq(1,10000,1),'moments'=V_X,'poisson'=lambda_hat)
+resm <- melt(res, id.vars='gene',measure.vars=c('moments','poisson'))
+
+ggplot(resm, aes(gene,log(value), col=variable))+geom_point(alpha=0.2)
+
+ggplot(res, aes(log(moments), log(poisson)))+geom_point(alpha=0.2)+geom_abline(intercept=0,slope=1)
+
+```
+This data tells us that the variance calculated from the method of moments is larger than the variance calculated from Poisson.  As we saw in the past, the Poisson distribution underestimates the variance from RNA-seq data. This definitely requires an overdispersed model.  
+
+\clearpage
+
+# Always include the session information.
+
+```{r sessionInformation}
+sessionInfo()
+```
