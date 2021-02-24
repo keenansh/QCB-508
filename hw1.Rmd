@@ -1,0 +1,745 @@
+---
+title: "QCB 408/508 -- Homework 1"
+author: "Shannon Keenan"
+header-includes:
+  - \newcommand{\boxedtext}[1]{ \noindent \makebox[\textwidth][c]{ \fbox{ \begin{minipage}[t]{0.96\linewidth}#1\end{minipage} } } }
+  - \hypersetup{pdfborder={0 0 1}}
+output: 
+  pdf_document
+---
+
+----
+
+\providecommand{\E}{\operatorname{E}}
+\providecommand{\V}{\operatorname{Var}}
+
+```{r, message=FALSE, echo=FALSE, cache=FALSE, warning = FALSE}
+library(knitr)
+opts_chunk$set(fig.align="center", collapse=TRUE,
+               comment="", prompt=TRUE, small.mar=TRUE)
+
+library(tidyr)
+library(dplyr)
+library(reshape2)
+library(ggplot2)
+library(gridExtra)
+library(moments)
+```
+
+
+## Instructions
+
+Homework 1 is due by **11:59pm on March 5th.** See the syllabus for further details on homeworks. Please submit both a `.Rmd` and `.pdf` file on Blackboard. We will not accept additional files. 
+
+Make sure you have your file structure arranged such that we can compile your `.Rmd` in a folder with the provided data files files. **You are not allowed to use the function `setwd()`. If it is used, we will count the homework as unable to compile and you will lose a significant amount of points.** Unzip the homework directory and double-click the `hw1.Rmd` file. This will start RStudio and set the working directory to the homework directory, regardless of where it is on your computer.
+
+Be sure to follow the collaboration policy outlined in the syllabus.  **For this homework, there are no problems where collaborations are allowed.**
+
+We will ask questions using bolded headings and  provide further details for these questions using the boxed-quote formatting. You will be expected to answer with R code and normal text.
+
+For all parts of this assignment, you MUST use R commands to print the output as part of your R Markdown file. You are not permitted to find the answer in the R interactive session and then copy-paste the answer into this document. Further, you are required to use LaTeX to answer questions involving math equations in the R Markdown file, when applicable.
+
+For this assignment, we ask that you try to use functions from the libraries that are discussed in *YARP, Yet Another R Primer*.
+
+Lastly, we advise that you compile your R Markdown file early and often, so you can catch problems before they get too tangled up with your work. Don't forget to look at the compiled PDF as well! R will not warn you when you create and submit a 5,000 page PDF because of unexpected output.
+
+For this homework, students enrolled in QCB 408 should answer all questions.
+
+----
+
+For undergraduates: Please type your name below the honor pledge to serve as a digital signature.
+
+> I pledge my honor that I have not violated the honor code when completing this assignment.
+
+Digitally signed:
+
+----
+
+\clearpage
+
+## Problem 1. Basics of R and R Markdown [10 pts]
+
+\boxedtext{For this section, we will briefly review a selection of the basic R skills needed for this course. This is by no means comprehensive! We assume you have read and understood Part I of \textit{YARP, Yet Another R Primer} before completing this problem.}
+
+### An example: What is 159083 divided by 619?
+
+\boxedtext{If we needed to provide additional information for a problem, we would do it in a boxed block like this sentence.}
+
+```{r example}
+159083/619
+```
+
+We ask that you answer R questions inside chunks using the R output. If you need to provide explanations, please do it in a paragraph of text outside of the chunks (like this one) instead of in comments in the code. The reason is that the paragraph text has formatting when the R Markdown file is compiled, while long columns will run off the page when compiled. Obviously, you should feel free to use short comments to point to details of the code when needed. You can also use LaTeX to answer math questions in paragraphs outside chunks, for example $\frac{159083}{619} = 257$ or:
+
+$$
+\frac{159083}{619} = 257
+$$
+
+### (a) Basic data types: populate a vector and a square matrix with the consecutive integers between 1 and 25. Then, use the same integers to populate a column named `N` in a data frame that also includes a character column named `A` (two columns total, you can fill the character column with whatever you want).  
+
+\boxedtext{Please use some function that R provides to generate the integers between 1 and 25. Do not add elements manually!}
+
+```{r Problem 1a}
+
+v <- seq(1,25,1)
+
+m <- matrix(v, length(v), length(v))
+
+df <- data.frame('N' = v, 'A' = rep('Hello',length(v)))
+
+```
+
+### (b) Accessing elements: use the `[` operator to access an element of the vector you made and a row of the matrix you made. Use the `$` operator to access (by name) a column of the data frame you made. 
+
+```{r Problem 1b}
+
+v[8]
+m[8,]
+df$N
+
+```
+
+### (c) Dimensions: check the length of the vector you made and the dimensions of the matrix you made.  
+
+```{r Problem 1c}
+
+length(v)
+dim(m)
+
+```
+
+### (d) Checking classes: use the `class()` function on the three variables you made.  
+
+```{r Problem 1d}
+
+class(v)
+class(m)
+class(df)
+
+```
+
+### (e) Functions: write a function to check if an integer is a prime number, then apply this function to the first row of your matrix.  
+
+\boxedtext{Since the numbers are small, feel free to check for prime-ness any way you'd like.}
+
+```{r Problem 1e}
+
+is.prime <- function(number) {
+  if (number < 1) {
+    print('This number is not prime')
+  } else if (number %in% c(1,2)) {
+      print('This number is prime')
+  } else {
+      re <- NULL
+      for (i in 2:(number-1)) {
+        re[i] <- number %% i
+      }
+    if (0 %in% re) {
+        print('This number is not prime')
+    } else {
+        print('This number is prime')
+    }
+  }
+}
+        
+#Apply function to first row of the matrix        
+
+p <- sapply(m[1,],is.prime, simplify = TRUE)
+p
+
+```
+
+### (f) Random numbers: use `set.seed()` to set a seed. Then, use `sample()` on the vector you created to shuffle it.  
+
+\boxedtext{For homeworks, you will want to use \texttt{set.seed} to keep random numbers reproducible. It usually suffices to just do it once at the beginning of the homework.}
+
+```{r Problem 1f}
+
+set.seed(8)
+
+v.shuffled <- v[sample(v)]
+
+```
+
+\clearpage
+
+## Problem 2. Exploratory data analysis of gene expression in breast cancer tumors. [16 pts]
+
+\boxedtext{We assume you have read and understood Part III of \textit{YARP, Yet Another R Primer} before completing this problem.}
+
+\boxedtext{Biological background. Mutations in the BRCA1 and BRCA2 genes are a hereditary risk factor in breast cancer. In this problem, we will consider gene expression data from tumors of cancer patients with these two mutations as well as "sporadic" breast cancer. Gene expression is the biological process in which genetic information encoded in DNA is turned into gene product, usually proteins. Gene products accomplish many tasks in biological systems and in general exist in different abundances. By studying genome-wide gene expression, researchers hope to catch a glimpse of the complex biological systems underlying phenotypes such as disease. This dataset is sourced from Hedenfalk, et al. (2001).}
+
+### Read in the gene expression data `brca.txt` and sample information `brca_samples.txt`.  
+
+\boxedtext{The gene expression dataset is generated from a two-channel microarray experiment with a reference sample. Gene expression in this experiment is measured from RNA purified from the tumors and reference. The values of the gene expression data are base-2 log of the gene expression ratio. More positive corresponds to more gene expression in the tumor sample. A value of 1 means there is twice as much RNA from the tumor sample when compared to RNA from the reference sample. Similarly, 2 corresponds to four times as much, -1 corresponds to one half as much, -2 corresponds to one quarter as much, etc. Note that the \texttt{gene\_id} column consists of integers that serve as placeholders and do not directly map to human genes. There are 22 tumors analyzed, and the labels and mutations are documented in \texttt{samples.txt}.}
+
+```{r Read in gene expression data}
+
+brca_expression <- read.csv('~/Desktop/QCB 508/HW1/hw1_update/brca.txt',sep='\t')
+brca_samples <- read.csv('~/Desktop/QCB 508/HW1/hw1_update/brca_samples.txt', sep='\t')
+
+```
+
+### (a) Identify how many genes have outlier values, using the $1.5 \times \mathrm{IQR}$ definition. Pool the gene expression data among all individuals and genes to compute the IQR. Compute the IQR using `quantile` or `summary`.
+
+```{r Problem 2a}
+
+#Compute IQR
+pooled_exp <- brca_expression[,2:dim(brca_expression)[2]] %>% gather()
+
+splits <- quantile(pooled_exp$value)
+
+Q1 <- splits[2]
+Q3 <- splits[4]
+
+IQR <- Q3-Q1
+
+#Compute how many genes have outliers 
+
+ng <- dim(brca_expression)[1]
+ns <- dim(brca_expression)[2]
+
+otl <- matrix(,nrow=ng, ncol=ns-1)
+
+for (i in 1:ng) {
+  otl[i,] <- brca_expression[i,2:ns]< Q1-1.5*IQR | brca_expression[i,2:ns]> Q3 +1.5*IQR
+}
+
+g_out <- rowSums(otl)
+
+#Number of genes with outliers
+sum(g_out>0)
+
+#Percentage of genes with outliers
+sum(g_out>0)/ng*100
+
+```
+742 genes, or about 23% of genes measure, have outliers.   
+
+### (b) How many genes have more than 15 outliers? What does this suggest about pooling the gene expression data?
+
+```{r Problem 2b}
+
+sum(g_out>15)
+
+```
+32 genes have more than 15 outliers.  This suggests that pooling the gene expression data may not be the best method of determining IQR?????
+
+### (c) Now, make the outlier calculation except on a gene-by-gene basis.
+
+```{r Problem 2c}
+
+ng <- dim(brca_expression)[1]
+ns <- dim(brca_expression)[2]
+
+otlg <- matrix(,nrow=ng, ncol=ns-1)
+
+for (i in 1:ng) {
+  splits <- as.numeric(quantile(brca_expression[i,2:ns]))
+  Q1 <- splits[2]
+  Q3 <- splits[4]
+  IQR <- as.numeric(Q3-Q1)
+  otlg[i,] <- brca_expression[i,2:ns]< as.numeric(Q1-1.5*IQR) | brca_expression[i,2:ns]> as.numeric(Q3 +1.5*IQR)
+}
+
+gg_out <- rowSums(otlg)
+
+#Number of genes with outliers
+sum(gg_out>0)
+
+#Percentage of genes with outliers
+sum(gg_out>0)/ng*100
+
+#Which have more than 15?
+sum(gg_out>=15)
+
+```
+Now, there are 1275 genes, or about 40%, with outliers.  
+
+### (d) Use a quantile-quantile plot to assess whether or not sample `s1721`'s gene expression vector is approximately Normal-distributed. 
+
+```{r Problem 2d}
+
+qqnorm(brca_expression$s1721); qqline(brca_expression$s1721)
+
+```
+This gene expression data does not quite follow a normal distribution.  There are some values that are more extreme that what would be expected if sampling from a Normal.  
+
+### (e) Plot the distribution of gene expression values for each individual, on the same plot. Order and color the plots by mutation type. 
+
+```{r Problem 2e}
+
+m <- melt(brca_expression, c('gene_id'))
+m <- cbind(m, 'mutation'=brca_samples$mutation[match(m$variable,brca_samples$sample_id)])
+
+p1 <- ggplot(filter(m, mutation == 'BRCA1'), aes(x=value, category =variable)) +
+  geom_density(color='blue') + 
+  xlab('Gene Expression') + ylab('Frequency')+
+  ggtitle('BRCA1')+
+  xlim(-5, 5)+ylim(0,.8)
+
+p2 <- ggplot(filter(m, mutation == 'BRCA2'), aes(x=value, category =variable)) +
+  geom_density(color='red') + 
+  xlab('Gene Expression') + ylab('Frequency')+
+  ggtitle('BRCA2')+
+  xlim(-5, 5)+ylim(0,.8)
+  
+p3 <- ggplot(filter(m, mutation == 'Sporadic'), aes(x=value, category =variable)) +
+  geom_density(color='darkgreen') + 
+  xlab('Gene Expression') + ylab('Frequency')+
+  ggtitle('Sporadic')+
+  xlim(-5, 5)+ylim(0,.8)
+
+grid.arrange(p1,p2,p3)
+```
+
+### (f) Effect sizes: compute the mean difference in gene expression per gene between BRCA1 and BRCA2. In other words, for each gene, compute the difference of means between patients in BRCA1 and BRCA2. Then, compute the mean, skewness, and excess kurtosis of these effect sizes. Finally, plot the histogram of effect sizes.
+
+```{r Problem 2f}
+
+#First find the mean difference in gene expression between BRCA1 and BRCA2
+BRCA1_samples <- dcast(filter(m, mutation=='BRCA1'), gene_id~variable, value.var='value')
+BRCA2_samples <- dcast(filter(m, mutation=='BRCA2'), gene_id~variable, value.var='value')
+
+B1m <- rowMeans(BRCA1_samples)
+B2m <- rowMeans(BRCA2_samples)
+
+mean_diff <- data.frame('gene_id' = BRCA1_samples$gene_id, 'Mean Difference' = abs(B2m-B1m))
+
+#Comput mean, skewness, and excess Kurtosis of effect sizes
+mean(mean_diff$Mean.Difference)
+skewness(mean_diff$Mean.Difference)
+kurtosis(mean_diff$Mean.Difference)-3
+
+#Plot histogram of effect sizes
+ggplot(mean_diff, aes(Mean.Difference))+geom_histogram(color='black',fill='purple')
+
+```
+
+### (g) Permuted effect sizes: repeat the effect size analysis from the previous question, except this time, shuffle (i.e., randomly permute) the BRCA1 and BRCA2 labels. What can you infer from this plot when compared to the previous one?
+
+```{r Problem 2g}
+
+BRCA_random <- cbind(BRCA1_samples, BRCA2_samples[2:ncol(BRCA2_samples)])
+
+set.seed(8)
+B1 <- sample(1:(ncol(BRCA_random)-1),(ncol(BRCA1_samples)-1), replace=FALSE)
+B2 <- which(!(1:(ncol(BRCA_random)-1) %in% B1))
+
+B1rm <- rowMeans(BRCA_random[,B1])
+B2rm <- rowMeans(BRCA_random[,B2])
+
+mean_diff_shuff <- data.frame('gene_id' = BRCA1_samples$gene_id, 'Mean Difference' = abs(B2rm-B1rm))
+
+#Comput mean, skewness, and excess Kurtosis of effect sizes
+mean(mean_diff_shuff$Mean.Difference)
+skewness(mean_diff_shuff$Mean.Difference)
+kurtosis(mean_diff_shuff$Mean.Difference)-3
+
+#Plot histogram of effect sizes
+ggplot(mean_diff_shuff, aes(Mean.Difference))+geom_histogram(color='black',fill='light blue')
+
+```
+Not sure what this tells us about the data... 
+
+
+### (h) Make a quantile-quantile plot of the observed effect sizes versus the shuffled label effect sizes.  Describe what you observe.  Does this agree with the above analyses?
+
+```{r Problem 2h}
+
+qqplot(mean_diff$Mean.Difference,mean_diff_shuff$Mean.Difference); 
+
+```
+The plot shows a straight line, meaning the data is distributed the same way, whether the BRCA labels are shifted or not. 
+
+\clearpage
+
+## Problem 3. Random mating with a finite population size. [18 pts]
+
+Suppose that the assumptions of Hardy-Weinberg equilibrium are satisfied in a population, except that (1) the population size is finite and (2) there may be genetic drift. Otherwise, mating is completely random, there is no mutation, migration, or selection, and each generation is discrete and non-overlapping.
+
+There are $n$ total diploid individuals in the population. At a particular locus, there are alleles A and B. At generation 0, there are $x_0$ B alleles ($2n - x_0$ A alleles) and the proportion of B alleles is $p_0 = \frac{x_0}{2n}$. The values $x_0$ and $p_0$ are non-random quantities, so they can be treated as parameters. For each subsequent generation, there are exactly $n$ individuals produced, implying each generation continues to have exactly $2n$ alleles. For $t = 0, 1, 2, \ldots$, we will let $X_t$ be the random number of B alleles and $P_t$ be the random proportion of B alleles.
+
+### (a) Determine the distribution of $X_1$ in terms of $x_0$ (and $n$, of course). For any $t > 0$, determine the distribution of $X_{t+1} | X_t$.
+
+The chances of an individual in generation 0 passing along a B allele is $p_0$ or $\frac{x_0}{2n}$.  There are 2N "trials" of passing along the B allele, with probability $p_0$.  Therefore, the number of B alleles passed onto the first generation follows a binomial distribution: 
+
+$$
+(X_1|X_0 = x_0) \thicksim \text{Binomial}(2N,\frac{x_0}{2N})\\
+f(x_1;x_0,2N) = {2N \choose x_1}\left(\frac{x_0}{2N}\right)^{x_1}\left(1-\frac{x_0}{2N}\right)^{2N-x_1}
+$$
+This can be generalized for any future generation:
+$$
+(X_{t+1}|X_t = x_t) \thicksim \text{Binomial}(2N,\frac{x_t}{2N})\\
+$$
+
+### (b) Calculate $\E[X_t]$ in terms of $x_0$, and calculate $\E[P_t]$ in terms of $p_0$. 
+
+
+$$
+\begin{align*}
+\textrm{E}[X_t] &= \textrm{E}[\textrm{E}[X_t|X_{t-1}]] = \textrm{E}[\textrm{E}[X_{t+1}|X_{t}]] \\
+&=\textrm{E}[2N\frac{x_t}{2N}] = E[x_t] 
+\end{align*}
+
+$$
+So if we wanted to know $\textrm{E}[X_1]$, then it would just be $x_0$ or the number of B alleles in the 1st generation.  If we wanted to know $\textrm{E}[X_2]$, this would just be $\textrm{E}[X_1]$, which as we saw is $x_0$.  Same goes for $\textrm{E}[X_3]$.
+
+So then, $\textrm{E}[X_t]$ is just $x_0$. 
+
+This is analogous for $\textrm{E}[P_t]$, since we are just dividing by a constant 2N.  
+$\textrm{E}[P_t]$ = $p_0$
+
+### (c) Calculate $\V[X_1]$ in terms of $p_0$ and calculate $\V[X_{t+1} | X_t]$ for $t > 0$ in terms of $P_t$. Finally, calculate $\V[X_t]$ and $\V[P_t]$ in terms of $p_0$.
+
+We can use the law of total variance here. 
+
+$$
+\begin{align*}
+\textrm{Var}(X_t) &= \textrm{E}[\textrm{Var}(X_t|X_{t-1})] + \textrm{Var}(\textrm{E}[X_t|X_{t-1}]) \\
+&= \textrm{E}\left[2N\left(\frac{X_{t-1}}{2N}\right)\left(1-\frac{X_{t-1}}{2N}\right)\right] + \textrm{Var}(\textrm{E}[X_{t-1}]) \\
+&= \textrm{E}\left[X_{t-1}\left(1-\frac{X_{t-1}}{2N}\right)\right]+\textrm{Var}(X_{t-1}) \\
+&= \textrm{E}[X_{t-1}]-\frac{1}{2N}\textrm{E}[X_{t-1}^2] +\textrm{Var}(X_{t-1})  \\ 
+&= x_0 - \frac{1}{2N}\textrm{E}[X_{t-1}^2] +\textrm{Var}(X_{t-1})  \\
+\\
+\textrm{But...}\\
+\\
+\textrm{Var}(X_t) &= \textrm{E}[X_t^2] - \textrm{E}[X_t]^2 \\
+\textrm{So...}\textrm{E}[X_t^2] &= \textrm{Var}[X_t] + \textrm{E}[X_t]^2 = \textrm{Var}[X_t] + x_0^2 \\
+\\
+\textrm{Var}(X_t) &=x_0 - \frac{1}{2N}(\textrm{Var}(X_{t-1})+x_0^2) + \textrm{Var}(X_{t-1})\\
+\bf\textrm{Var}(X_t) &=x_0\left(1-\frac{x_0}{2N}\right)-\textrm{Var}(X_{t-1})\left(1-\frac{1}{2N}\right)\\
+\bf\textrm{Var}(X_t) &=2Np_0\left(1-p_0\right)-\textrm{Var}(X_{t-1})\left(1-\frac{1}{2N}\right)\\
+\end{align*}
+
+$$
+
+So we can plug in for $\textrm{Var}[X_1]$
+
+$$
+
+\textrm{Var}(X_1) =2Np_0\left(1-p_0\right)-\textrm{Var}(X_0)\left(1-\frac{1}{2N}\right)\\
+\textrm{Var}(X_1) =2Np_0\left(1-p_0\right)-0\left(1-\frac{1}{2N}\right)\\
+\bf\textrm{Var}(X_1) =2Np_0\left(1-p_0\right)
+
+$$
+We can try to find a recursive relationship for all other generations:
+
+$$
+
+\textrm{Var}(X_1) =2Np_0\left(1-p_0\right) = C\\
+\textrm{Var}(X_2) =2Np_0\left(1-p_0\right)-2Np_0\left(1-p_0\right)\left(1-\frac{1}{2N}\right) = C-C\left(1-\frac{1}{2N}\right) \\
+\textrm{Var}(X_3) =2Np_0\left(1-p_0\right)-\left(2Np_0\left(1-p_0\right)-2Np_0\left(1-p_0\right)\left(1-\frac{1}{2N}\right)\right)\left(1-\frac{1}{2N}\right)\\
+=C-\left(C-C\left(1-\frac{1}{2N}\right)\right)\left(1-\frac{1}{2N}\right) = \\
+\textrm{etc...}\\
+\\
+\textrm{Var}(X_t) = 2Np_0\left(1-p_0\right)\sum_{k=0}^{k=t-1}\left(-\frac{1}{2N}\right)^k
+
+$$
+Also, we can find $\textrm{Var}[P_t] = \textrm{Var}[X_t/2N] = \frac{1}{4N^2}\textrm{Var}[X_t]$
+So ... $\textrm{Var}[P_t] = \frac{p_0}{2N}\left(1-p_0\right)\sum_{k=0}^{k=t-1}\left(-\frac{1}{2N}\right)^k$
+$\textrm{Var}[P_t] = p_0\left(1-p_0\right)\sum_{k=0}^{k=t}\left(-\frac{1}{2N}\right)^k$
+
+### (d) Determine $\lim_{t \rightarrow \infty} \V[P_t]$.
+
+$$
+\sum_{k=0}^{k=t}\left(-\frac{1}{2N}\right)^k \textrm{converges to }\frac{2}{3} \textrm{ as } t\rightarrow\infty\\
+
+\lim_{t \rightarrow \infty} \textrm{Var}[P_t] =\frac{2}{3}p_0\left(1-p_0\right) \\
+
+$$
+
+### (e) It is a fact that under this model, with probability 1 it is eventually that case that $P_t = 1$ or $P_t = 0$. It can be calculated that $P_t = 1$ eventually with probability $p_0$ and $P_t = 0$ eventually with probability $1-p_0$. Explain why the results from parts (b) and (d) makes sense given these fixation probabilities.
+
+Over time, there is genetic drift.  The proportion of B alleles is changing every time, meaning that we will eventually lose the A allele or the B allele.  It really only depends on the previous generation's proprtiona of B alleles, which is what variance and expected value depend on in parts b and d. 
+
+### (f) Carry out a simulation where $P_t$ is simulated for $t=0, 1, \ldots, 200$ for 40 replications. Plot $t$ on the x-axis versus $P_t$ on the y-axis, where the results for all 40 replcations are shown in a single plot. Do this for all combinations of $n = 50, 200, 1000$ and $p_0 = 0.01, 0.1, 0.5$ (for a total of 9 plots, which you can arrange in a 3 $\times$ 3 grid, if you want). Summarize your observations about the relationship between $n$ and the trajectories of $P_t$, and also about the relationship between $p_0$ and the trajectories of $P_t$.
+
+
+```{r Problem 3f, options(warn=-1)}
+
+t=200
+p_0 = c(0.01,0.1,0.5)
+n= c(50,200,1000)
+reps = 40
+df <- NULL
+
+for (k in 1:3){
+for (j in 1:3){
+  p <- p_0[k]
+  N <n[j]
+  for (i in 1:t){
+    x <- rbinom(40, 2*N, p)
+    p <- x/(2*N)
+    rows <- data.frame(replicate = 1:reps, N = rep(n[j], reps), 
+                         gen = rep(i, reps), p0 = rep(p_0[k], reps), 
+                         p = p)
+    df <- rbind(df, rows)
+  }
+}
+}
+
+#Now plot it!
+
+ggplot(df, aes(x=gen,y=p, group = replicate))+
+  geom_path()+ 
+  facet_grid(N ~ p0) 
+
+
+```
+If the proportion of B alleles in the first generation is small, that proportion is likely to stay the same.  There are not enough B alleles to change the proportion.  Of course, as N increases, the chance of propotion changing also increases, since there are more chances for a B allele to be passed along.  
+
+
+\clearpage
+
+## Problem 4. Models of RNA-Seq data. [16 pts]
+
+In this problem, we will explore RNA-Seq gene expression data. The file `rna_seq.txt` contains a matrix of counts, where the rows are genes and the columns are observations. The observations are sampled from the same biological condition. One strategy to analyze RNA-Seq data is to transform the counts $y_{ij}$ as follows:
+$$
+x_{ij} = \mathrm{log}_{2}\left(\dfrac{y_{ij} + 0.5}{d_{j}} \times 10^{6}\right),
+$$
+where $d_{j}$ is the read depth (total number of counts) for observation $j$.
+
+### (a) Load `rna_seq.txt`. Filter genes with fewer than $25$ total counts. Transform the data as above, and report $d_{j}$ for all observed gene-count vectors. Why do we divide the per-gene read counts $y_{ij}$ by $d_{j}$?
+
+```{r Problem 4a}
+
+rna_seq <- read.csv('~/Desktop/QCB 508/HW1/hw1_update/rna_seq.txt',sep='\t', header=TRUE)
+w <- which(rowSums(rna_seq) < 25)
+y<- rna_seq[-w,]
+
+#Transform the data 
+dj <- colSums(y)
+
+x <- log((y+0.5)*1000000/dj,2)
+
+```
+
+Dividing the per-gene read counts by the read depth helps normalize the data, so that it is comparable across observations.  If a gene in observation 1 has higher expression than a gene in observation 2, that may just be because observation 2 had a higher read depth, not because there is a true difference between observations.  
+
+### (b) Calculate the gene-wise sample means and sample variances of both the original counts $y_{ij}$ and the log-transformed counts $x_{ij}$. Create five plots: (1) the gene-wise sample means versus the sample variances of the original counts; (2) log-transformed gene-wise sample means versus the log-transformed sample variances of the original counts; (3) the gene-wise sample means versus the sample variances of the transformed counts; (4) a histogram of the $y_{ij}$ values; and (5) a histogram of the $x_{ij}$ values. What do you observe?
+
+```{r Problem 4b}
+
+#gene-wise sample mean and variance for original 
+y_mean = rowMeans(y)
+y_var = rowSums((y-y_mean)^2)/(dim(y)[2]-1)
+y_df <- data.frame(y_mean, y_var)
+
+#mean and variance for log transformed 
+
+x_mean <- rowMeans(x)
+x_var <- rowSums((x-x_mean)^2)/(dim(x)[2]-1)
+x_df <- data.frame(x_mean, x_var)
+
+#Plot some things! 
+
+ggplot(y_df, aes(x=y_mean, y=y_var)) +geom_point(alpha=0.5, color='navy')
+ggplot(y_df, aes(x=log(y_mean), y=log(y_var))) +geom_point(alpha=0.5, color='red')
+ggplot(y_df, aes(x=x_mean, y=x_var)) +geom_point(alpha=0.2, color='purple')
+
+ggplot(melt(y), aes(value)) +geom_histogram()
+ggplot(melt(x),aes(value)) + geom_histogram()
+
+```
+The original data is highly skewed.  So most genes have counts that are very low and there are a select few with extremely high counts.  Transforming the data makes the counts for bell-shaped, it looks more normal.  
+
+### (c) In class we found that the variance of the untransformed counts are quadratic with respect to the mean, $\mathrm{E}[Y_{ij}] = \mu_{ij}$:
+$$
+\V[Y_{ij}] = \mu_{ij} + \mu_{ij}^{2}\phi_{i}.
+$$
+
+### Suppose we want to (approximately) calculate $\V[X_{ij}]$. One strategy is to apply a first order Taylor expansion:
+$$
+X_{ij} = g(Y_{ij}) \approx g(\mu_{ij}) + g^{\prime}(\mu_{ij})(Y_{ij} - \mu_{ij}).
+$$
+
+### Based on this, calculate an approximation of $\V[X_{ij}]$ in terms of the above $\V[Y_{ij}]$.
+
+$$
+\begin{align*}
+g(\mu_{ij}) &= \log_2 \left ( \frac{\mu_{ij}+0.5}{d_j}*10^6) \right) \\
+g'(\mu_{ij}) &= \frac{1}{\frac{10^6}{d_i}(\mu_{ij}+0.5)\ln(2)} \\
+\textrm{so...} \\
+X_{ij} &\approx \log_2 \left ( \frac{\mu_{ij}+0.5}{d_j}*10^6) \right) + \frac{(Y_{ij}-\mu_{ij})}{\frac{10^6}{d_j}(\mu_{ij}+0.5)\ln(2)} \\
+\end{align*}
+$$
+Recall that the variance of a constant is 0.
+
+$$
+\begin{align*}
+\textrm{Var}[X_{ij}] &\approx 0 + \left( \frac{1}{\frac{10^6}{d_j}(\mu_{ij}+0.5)\ln(2)} \right)^2 \textrm{Var}[Y_{ij}] - 0 \\
+\textrm{Var}[X_{ij}] &\approx \left( \frac{1}{\frac{10^6}{d_j}(\mu_{ij}+0.5)\ln(2)} \right)^2 (\mu_{ij} + \mu_{ij}^{2}\phi_{i}) \\
+\textrm{Var}[X_{ij}] &\approx \frac{(\mu_{ij} + \mu_{ij}^{2}\phi_{i})}{\left (\frac{10^6\ln(2)}{d_j}\right)^2(\mu_{ij}+0.5)^2}
+\end{align*}
+$$
+
+### (d) Finally, approximate the squared biological coefficient of variation in the study, $\phi$. Here, assume that it is the same for every gene, i.e. $\phi_{1} = \phi_{2} =\ldots = \phi_{m}$ where there are $m$ genes in the dataset. Note: You may also assume that for large $y$, $\log(y+c) \approx \log(y)$.
+
+$$
+
+CV^2 = \frac{\textrm{Var}}
+
+$$
+
+```{r Problem 4d}
+
+
+
+```
+
+
+\clearpage
+
+## Problem 5. Central Limit Theorem (CLT) [10 pts]
+
+### (a) CLT shown through simulation. 
+
+Suppose that $X_1, X_2, \ldots, X_{70} \sim \textrm{Exponential}(3)$. Show through simulation and visualizations that 
+$$
+\frac{\overline{X} - 1/3}{\sqrt{1/9 \times 1/70}}
+$$
+is distributed approximately $\textrm{Normal}(0,1)$, where $\overline{X} = \frac{1}{70} \sum_{i=1}^{70} X_i$.  
+
+
+```{r Problem 5a}
+#We want to find the mean x, but first we need to simulate 70 random variables that are distributed exponentially 
+
+#simulate this many times and plot the distribution 
+for (i in 1:100000){
+  b <- rexp(70,3)
+  x_bar <- sum(b)/70
+  x_bar_n[i] <- (x_bar - (1/3))/sqrt((1/9)*(1/70))
+}
+
+hist(x_bar_n)
+mean(x_bar_n)
+var(x_bar_n)
+
+```
+For 100,000 simulations, the mean is close to zero and the variance is close to 1, approximating a Normal distribution.  
+
+
+### (b) Poisson approximation to Binomial. 
+
+Suppose that $X \sim \textrm{Binomial}(1000, 0.01)$. Show through simulation that $X$ is distributed approximately $\textrm{Poisson}(\lambda)$ where $\lambda = 1000 \times 0.01$. Explain why this approximation works.  
+
+```{r Problem 5b}
+
+NOT DONE THIS ONE IS NOT DONE
+
+  bi_1000000<- rbinom(1000000,1000,0.01)
+  pois <- rpois(1000000,10)
+
+d <-melt(data.frame(bi_1000000, pois))
+
+ggplot(d, aes(x=value, color=variable)) +
+  geom_histogram(fill = c('blue'), alpha=0.4) 
+ 
+    
+```
+
+
+\clearpage
+
+## Problem 6. Random Variables [15 pts]
+
+### (a) Standardized random variable.
+
+Suppose $X$ is a random variable with population mean $\textrm{E}[X]$ and population variance $\textrm{Var}[X]$. Let
+$$
+Z = \frac{X - \textrm{E}[X]}{\sqrt{\textrm{Var}[X]}}.
+$$
+Show that $\textrm{E}[Z] = 0$ and $\textrm{Var}[Z]=1$.
+
+For this problem, it is important to note that $\textrm{E}[X]$ and $\textrm{Var}[X]$ are just constants.  Like any other constant, the expecation of a constant is just that constant. So $\textrm{E}[\textrm{E}[X]] = \textrm{E}[X]$ and $\textrm{E}[\sqrt{\textrm{Var}(X)}] = \sqrt{\textrm{Var}(X)}$. Also Linear combinations of of an expected value can be rewritten to pull constants out of the expected value: 
+
+
+$$
+\begin{align*}
+\textrm{E}[Z] &= \textrm{E} \left[ {\frac{X-\textrm{E}[X]}{\sqrt{\textrm{Var}[X]}}} \right] \\
+
+&= \textrm{E} \left[ \frac{X}{\sqrt{\textrm{Var}[X]}} \right] - \textrm{E} \left[ \frac{\textrm{E}[X]}{\sqrt{\textrm{Var}[X]}} \right] \\
+&= \frac{\textrm{E}[X]}{\sqrt{\textrm{Var}[X]}} - \frac{\textrm{E}[X]}{\sqrt{\textrm{Var}[X]}} \\
+&=\textbf{0}
+\end{align*}
+$$
+
+### (b) Covariance under independence.
+
+Suppose that $X$ and $Y$ are independent random variables. Show that $\textrm{Cov}(X,Y) = 0$.
+
+If $X$ and $Y$ are independant, then $f(x,y) = f(x)f(y)$. 
+
+$$
+\begin{align*}
+\textrm{Cov}(X,Y) & = \textrm{E}[(X-\textrm{E}[X])(Y-\textrm{E}[Y])] \\
+& = \sum_{x}\sum_{y}(X-\textrm{E}[X])(Y-\textrm{E}[Y])f(x,y)
+\\
+& = \sum_{x}\sum_{y}(X-\textrm{E}[X])(Y-\textrm{E}[Y])f(x)f(y) \\
+& = \sum_{x}(X-\textrm{E}[X])f(x) \sum_{y}(Y-\textrm{E}[Y])f(y) \\
+& = \left(\sum_{x}(X)f(x) - \textrm{E}[X]\right) - \left(\sum_{y}(Y)f(y) - \textrm{E}[Y]\right) \\
+& = \left(\textrm{E}[X] - \textrm{E}[X]\right) - \left(\textrm{E}[Y] - \textrm{E}[Y]\right) \\
+& =0
+\end{align*}
+$$
+
+### (c) Expected value of the sample variance.
+
+Suppose $X_1, X_2, \ldots, X_n$ are i.i.d. random variables with $\textrm{E}[X_i] = \mu$ and $\textrm{Var}[X_i] = \sigma^2$. Let
+$$
+S^2= \frac{\sum_{i=1}^{n} (X_i - \overline{X})^2}{n-1},
+$$
+where $\overline{X} = \sum_{i=1}^{n} X_i/n$. Show that $\textrm{E}[S^2] = \sigma^2$.
+
+$$
+\begin{align*}
+\textrm{E}[S^2] &=\textrm{E}\left[\frac{\sum_{i=1}^{n}(X_i-\overline{X})^2}{n-1}\right] \\
+&=\frac{\sum_{i=1}^{n}\textrm{E}\left[(X_i-\overline{X})^2\right]}{n-1} \\
+\end{align*}
+$$
+Also: 
+
+$$
+
+\textrm{E}[X] = \sum
+
+NOT DONE THIS IS NOT FINISHED 
+
+$$
+
+
+\clearpage
+
+## Problem 7. EFDs and Fisher Information [15 pts]
+
+### (a) Write the $\operatorname{Binomial}(n,p)$ distribution in exponential family form.  Identify the natural parameter, $\eta$, sufficient statistic, $T(x)$, and cumulant generating function, $A(\eta)$. 
+
+$$
+\begin{align*}
+f(x;n,p) &= {n \choose x}p^x(1-p)^{n-x} \\
+&\textrm{Take exp(ln())}\\
+&=\textrm{exp}(\ln{n \choose x}+x\ln(p)+(n-x)\ln{(1-p)})\\
+&={n \choose x}\textrm{exp}(x\ln{\frac{p}{1-p}}+n\ln(1-p))
+\end{align*}
+$$
+This is now written in EFD form.  We can specify:
+
+$$
+\eta(p) = \ln{\frac{p}{1-p}}\\
+T(x) = x\\
+A(\eta) = \ln(1+e^\eta)
+
+$$
+
+### (b) Compute the Fisher information for $X \sim \operatorname{Binomial}(n,p)$ in terms of $p$, and then compute the Fisher information in terms of its natural parameter, $\eta$.  Determine whether they are equal or not.
+
+### (c) For each value $n = 1, 2, 4, 8$, calculate the Fisher information for $p = 0.05, 0.10, \ldots, 0.95$. Plot $p$ versus the Fisher information for each value of $n$ (color each value of $n$ differently) and explain what you observe.
+
+\clearpage
+
+## Always include the session information.
+
+```{r sessionInformation}
+sessionInfo()
+```
